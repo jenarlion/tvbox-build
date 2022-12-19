@@ -1,6 +1,6 @@
 # tvbox-build
 
-[![Build](https://shields.io/github/workflow/status/celetor/tvbox-build/Build?logo=github&label=Build)](https://github.com/celetor/tvbox-build/actions)
+[![Build](https://img.shields.io/github/actions/workflow/status/celetor/tvbox-build/build.yml?branch=main&logo=github&label=Build)](https://github.com/celetor/tvbox-build/actions)
 [![Download](https://img.shields.io/github/v/release/celetor/tvbox-build?color=orange&logoColor=orange&label=Download&logo=DocuSign)](https://github.com/celetor/tvbox-build/releases/latest) 
 [![Total](https://shields.io/github/downloads/celetor/tvbox-build/total?logo=Bookmeter&label=Counts&logoColor=blue&color=blue)](https://github.com/celetor/tvbox-build/releases)
 
