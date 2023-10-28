@@ -7,6 +7,11 @@ on:
 #    branches:
 #      - main
   workflow_dispatch:
+    inputs:
+      arm64_support:
+        description: 'arm64 is supported, but ijk decoder is not supported.'
+        required: false
+        type: boolean
 
 jobs:
   build:
@@ -26,22 +31,17 @@ jobs:
       # 登录蓝奏云后在控制台运行document.cookie
       ylogin: ${{ secrets.YLOGIN }}
       phpdisk_info: ${{ secrets.PHPDISK_INFO }}
-      # 蓝奏云里的文件夹ID（TVBoxOS:5848262）
+      # 蓝奏云里的文件夹ID
       lanzou_folder_id: 5848262
 
     steps:
-#      - name: IP
-#        run: |
-#          ip=`curl -sL http://ip.42.pl/raw`
-#          echo "server ip: $ip"
-
       - name: Checkout
         uses: actions/checkout@v3
         with:
           fetch-depth: 0
           path: actions
 
-      - name: Get The Last Commit
+      - name: Get The Lastest Commit
         working-directory: actions
         run: |
           commit=$(curl -sL ${{ matrix.repoUrl }}/commits/${{ matrix.branchName }} |grep -o '/commit/[a-z0-9]\+' |head -1 | cut -d\/ -f3)
@@ -63,7 +63,15 @@ jobs:
         run: |
           echo "tag=$(git log --date=format:'%Y.%m%d.%H%M' --pretty=format:%cd ${{ env.commit_id }} -1)" >> $GITHUB_ENV
           echo "update_time=$(git log --date=format:'%Y/%m/%d %H:%M' --pretty=format:%cd ${{ env.commit_id }} -1)" >> $GITHUB_ENV
+          # tar -cJf source-${{ env.commitS }}.tar.xz --exclude=.git --exclude=.github *
           zip -q -x ".git/*" -r ${{ matrix.userName }}_${{ env.commit_id }}_src.zip .
+
+      - name: Arm64 Support Beta
+        if: ${{ inputs.arm64_support }}
+        working-directory: TVBoxOSC
+        run: |
+          sed -i "/armeabi-v7a[\'\"]$/s#\$#, 'arm64-v8a'#" app/build.gradle
+          sed -i "/armeabi-v7a[\'\"]$/s#\$#, 'arm64-v8a'#" player/build.gradle
 
       - name: Add Sign Info
         if: ${{ env.commit }}
@@ -101,17 +109,10 @@ jobs:
         if: ${{ env.commit && env.local_xwalk }}
         working-directory: TVBoxOSC
         run: |
-          if [ ${{ env.local_xwalk }} = 'true' ]; then
-            echo 'use local xwalk library'
-            cp -f ${{ github.workspace }}/actions/.github/scripts/xwalk_shared_library-23.53.589.4.aar ./app/libs/xwalk_shared_library-23.53.589.4.aar
-            # lineNo=$(awk '/org.xwalk/{ print NR; exit }' ./app/build.gradle)
-            # sed -i "/org.xwalk/i\    implementation files('libs\\\\\\\\xwalk_shared_library-23.53.589.4.aar')" ./app/build.gradle
-            # sed -i '/org.xwalk/,/^\s*}$/d' ./app/build.gradle
-            sed -i "/crosswalk/a\        flatDir { dirs './libs' }" ./build.gradle
-            sed -i "/org.xwalk/c\    implementation(name: 'xwalk_shared_library-23.53.589.4', ext: 'aar') {" ./app/build.gradle
+          if grep -q 'crosswalk' build.gradle; then
+            sed -i "/crosswalk/a\   maven { url 'https://celetor.github.io/crosswalk/releases/crosswalk/android/maven2' }" build.gradle
           else
-            echo 'maven url fix'
-            sed -i "/crosswalk/a\        maven { url 'http://9xi4o.tk/maven2' }" ./build.gradle
+            sed -i "/jitpack.io/a\  maven { url 'https://celetor.github.io/crosswalk/releases/crosswalk/android/maven2' }" build.gradle
           fi
 
       - name: Set up Gradle
