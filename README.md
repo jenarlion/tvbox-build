@@ -13,6 +13,7 @@ This repo relies on the following third-party projects:
 - [takagen99/Box](https://github.com/takagen99/Box) (Updated: [commit](./log/takagen99.txt))
 
 ## Others
+- https://github.com/celetor/epg
 - http://diyp.112114.xyz
 - http://epg.51zmt.top:8000
 

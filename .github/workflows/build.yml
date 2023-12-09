@@ -89,9 +89,9 @@ jobs:
           sed -i '$a\RELEASE_KEY_PASSWORD=TVBoxOSC'         ./gradle.properties
           version_code=$(git rev-list --count HEAD)
           echo "version code: $version_code"
-          sed -i "/versionCode/c\\versionCode ${version_code}" ./app/build.gradle
-          sed -i "/versionName/c\\versionName '${{ env.tag }}'" ./app/build.gradle
-          sed -i "/applicationId/c\\applicationId '${{ matrix.userName }}.tvbox.osc'" ./app/build.gradle
+          sed -i "/   versionCode/c\\versionCode ${version_code}" ./app/build.gradle
+          sed -i "/   versionName/c\\versionName '${{ env.tag }}'" ./app/build.gradle
+          sed -i "/   applicationId/c\\applicationId '${{ matrix.userName }}.tvbox.osc'" ./app/build.gradle
           sed -i "/android:text=/c\\        android:text=\"v${{ env.tag }}\\\\n本软件只提供聚合展示功能，所有资源来自网上, 软件不参与任何制作, 上传, 储存, 下载等内容。 软件仅供学习参考, 请于安装后24小时内删除。\\\\n\\\\n打包分发请保留出处\\\\n${{ matrix.repoUrl }}\"" ./app/src/main/res/layout/dialog_about.xml
 
       - name: Env Cache
@@ -132,9 +132,17 @@ jobs:
         run: |
           rm -rf apk/
           mkdir -p apk/
-          for file in `find . -name "*release*.apk" -print`; do
-            echo $file
-            mv "$file" apk/TVBox_${{ matrix.userName }}_${{ env.tag }}.apk
+          for file in `find . -name "*.apk" -print`; do
+            filename=$(basename "$file")
+            if [[ $filename =~ "debug" ]] ; then
+              echo "忽略: $file"
+            elif [[ $filename =~ "release" ]] ; then
+              echo "移动并重命名: $file"
+              mv "$file" apk/TVBox_${{ matrix.userName }}_${{ env.tag }}.apk
+            else
+              echo "只移动: $file"
+              mv "$file" apk/
+            fi
           done
 
       - name: Write Update Changelog
@@ -185,6 +193,5 @@ jobs:
       - name: Upload App To Lanzou
         if: ${{ env.commit && env.ylogin }}
         run: |
-          python3 ${{ github.workspace }}/actions/.github/scripts/lzy_web.py \
-          "${{ github.workspace }}/TVBoxOSC/apk/TVBox_${{ matrix.userName }}_${{ env.tag }}.apk" "$lanzou_folder_id"
+          python3 ${{ github.workspace }}/actions/.github/scripts/lanzou-api.py "${{ github.workspace }}/TVBoxOSC/apk/" "$lanzou_folder_id"
           echo "share address: https://wwi.lanzoup.com/b0dah3rlc  password:celetor"
